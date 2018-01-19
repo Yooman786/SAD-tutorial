@@ -1,43 +1,129 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-<CodeBlocks_project_file>
-	<FileVersion major="1" minor="6" />
-	<Project>
-		<Option title="calc_monolithic" />
-		<Option pch_mode="2" />
-		<Option compiler="gcc" />
-		<Build>
-			<Target title="Debug">
-				<Option output="bin/Debug/calc_monolithic" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj/Debug/" />
-				<Option type="1" />
-				<Option compiler="gcc" />
-				<Compiler>
-					<Add option="-g" />
-				</Compiler>
-			</Target>
-			<Target title="Release">
-				<Option output="bin/Release/calc_monolithic" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj/Release/" />
-				<Option type="1" />
-				<Option compiler="gcc" />
-				<Compiler>
-					<Add option="-O2" />
-				</Compiler>
-				<Linker>
-					<Add option="-s" />
-				</Linker>
-			</Target>
-		</Build>
-		<Compiler>
-			<Add option="-Wall" />
-			<Add option="-fexceptions" />
-		</Compiler>
-		<Unit filename="main.cpp" />
-		<Extensions>
-			<code_completion />
-			<envvars />
-			<debugger />
-			<lib_finder disable_auto="1" />
-		</Extensions>
-	</Project>
-</CodeBlocks_project_file>
+#include<bits/stdc++.h>
+#include<string>
+
+using namespace std;
+class Calculations
+{
+public:
+   bool isChar(string s){}
+   int solve(int op1, int op2, char ch){}
+   virtual int preference( char ch){}
+   void evaluate(string s1){}
+
+};
+class calculator: public Calculations
+{
+bool isChar(string s)
+{
+     if(s.size() >1 ) return false;
+
+     switch (s[0]) {
+        case '+': return true;
+        case '-': return true;
+        case '*': return true;
+        case '/': return true;
+        case '(': return true;
+        case ')': return true;
+        case '^': return true;
+        default: return false;
+    }
+}
+
+int solve(int op1, int op2, char ch)
+{
+     switch(ch)
+     {
+          case '+': return (op1+op2);
+          case '-': return (op1-op2);
+          case '*': return (op1*op2);
+          case '/': return (op1/op2);
+          case '^': return pow(op1,op2);
+
+     }
+}
+
+int preference( char ch)
+{
+     switch(ch)
+     {
+          case '+': return 1;
+          case '-': return 1;
+          case '*': return 2;
+          case '/': return 2;
+          case '^': return 3;
+          case '(': return -1;
+     }
+}
+
+public : void evaluate(string s1)
+{
+     stack<char> operators;
+     stack<int> operands;
+
+     string s;
+     istringstream is(s1);
+     while(is>>s)
+     {
+          if(isChar(s))
+          {
+               if(s[0]=='(') operators.push('(');
+               else if(s[0]==')')
+               {
+                    while(operators.top()!='(')
+                    {
+                         char ch=operators.top(); operators.pop();
+                         int op2=operands.top(); operands.pop();
+                         int op1=operands.top(); operands.pop();
+
+                         operands.push(solve(op1,op2,ch));
+                    }
+                    operators.pop();
+               }
+               else
+               {
+                    while(!operators.empty() &&   preference(s[0]) <= preference(operators.top()))
+                    {
+                         char ch=operators.top(); operators.pop();
+                         int op2=operands.top(); operands.pop();
+                         int op1=operands.top(); operands.pop();
+
+                         operands.push(solve(op1,op2,ch));
+
+                    }
+
+                    operators.push(s[0]);
+               }
+
+          }
+          else
+          {
+               int op=atoi(s.c_str());
+               operands.push(op);
+          }
+
+     }
+
+     while(!operators.empty())
+     {
+          char ch=operators.top(); operators.pop();
+          int op2=operands.top(); operands.pop();
+          int op1=operands.top(); operands.pop();
+
+          operands.push(solve(op1,op2,ch));
+     }
+
+     //cout<<operands.empty()<<" "<<operators.empty();
+     cout<<"result: "<<operands.top()<<endl;
+}
+};
+int main()
+{
+     calculator obj;
+
+          string s;
+          cout<<"Enter your expression";
+          getline(cin,s);
+          obj.evaluate(s);
+
+     return 0;
+}

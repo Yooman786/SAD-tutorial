@@ -1,0 +1,436 @@
+Tutorial 2
+Q)Implement calculator program using multithread server.Each user will be served by different thread.At the end the server will respond with all the calculations done by the specific user.
+Theory:
+Multithreading is a Java feature that allows concurrent execution of two or more parts of a program for maximum utilization of CPU. Each part of such program is called a thread. So, threads are light-weight processes within a process.
+
+Threads can be created by using two mechanisms :
+1. Extending the Thread class
+2. Implementing the Runnable Interface
+Here we have extended the Thread class.
+A data output stream lets an application write primitive Java data types to an output stream in a portable way. An application can then use a data input stream to read the data back in.
+Constructor:
+DataOutputStream (OutputStream out) : Creates a new data output stream to write data to the specified underlying output stream.
+Important Funtions:
+void flush() : Flushes this data output stream.
+int size () : Returns the current value of the counter written, the number of bytes written to this data output stream so far.
+void writeUTF (String str) : Writes a string to the underlying output stream using modified UTF-8 encoding in a machine-independent manner.
+A data input stream enable an application read primitive Java data types from an underlying input stream in a machine-independent way(instead of raw bytes). That is why it is called DataInputStream – because it reads data (numbers) instead of just bytes.
+An application uses a data output stream to write data that can later be read by a data input stream. Data input streams and data output streams represent Unicode strings in a format that is a slight modification of UTF-8.
+DataInputStream is not necessarily safe for multithreaded access. Thread safety is optional and is the responsibility of users of methods in this class.
+Constructor:
+DataInputStream(InputStream in) : Creates a DataInputStream that uses the specified underlying InputStream.
+The java.io.DataInputStream.readUTF() method reads in a string that has been encoded using a modified UTF-8 format. The string of character is decoded from the UTF and returned as String.
+
+JUnit: It is a unit testing framework for the Java programming language. JUnit has been important in the development of test-driven development, and is one of a family of unit testing frameworks which is collectively known as xUnit that originated with SUnit.
+JUnit is linked as a JAR at compile-time; the framework resides under package junit.framework for JUnit 3.8 and earlier, and under package org.junit for JUnit 4 and later.
+
+
+Class Diagram:
+
+
+
+
+
+
+Program:
+import java.io.*;
+import java.net.*;
+public class caluiclient {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		String host="127.0.0.1";
+		int portno=8885;
+
+		try{
+		    Socket socket=new Socket(host,portno);
+		    DataInputStream inStream=new DataInputStream(socket.getInputStream());
+		    DataOutputStream outStream=new DataOutputStream(socket.getOutputStream());
+		    BufferedReader br=new BufferedReader(new InputStreamReader(System.in));
+		    String clientMessage="",serverMessage="";
+		    while(!clientMessage.equals("bye")){
+		      System.out.println("Enter number :");
+		      clientMessage=br.readLine();
+		      outStream.writeUTF(clientMessage);
+		      outStream.flush();
+		      serverMessage=inStream.readUTF();
+		      System.out.print(serverMessage);
+		    }
+		    while(true)
+		    {
+		    	serverMessage=inStream.readUTF();
+		    	if(serverMessage.equals("done"))
+		    	{
+		    		break;
+		    	}
+		    	System.out.println(serverMessage);
+		    }
+		    outStream.close();
+		    outStream.close();
+		    socket.close();
+		  }catch(Exception e){
+		    System.out.println(e);
+		  }
+	}
+
+}
+import java.net.*;
+import java.io.*;
+public class calBserver {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		String host="127.0.0.1";
+		int portno=8885;
+		System.out.println("Server Started!!");
+		try {
+			//server open socket
+			ServerSocket ss=new ServerSocket(portno);
+			int counter=0;
+			while(true)
+			{
+				Socket s=ss.accept();
+				counter++;
+				System.out.println("Client: "+String.valueOf(counter)+" is connected to the server");
+				ClientServerThread cst=new ClientServerThread(counter,s);
+				cst.start();
+			}
+		}
+		catch(Exception e)
+		{
+
+		}
+	}
+}
+package BusinessLogic;
+
+public interface calcinterface {
+
+	public double add(double a,double b);
+    public double sub(double a,double b);
+    public double mul(double a,double b);
+    public double div(double a,double b);
+}
+package BusinessLogic;
+
+public class Calcprocess implements cali {
+	   public double add(double a,double b)
+		{
+			return a+b;
+		}
+	    public double sub(double a,double b){return a-b;}
+	    public double mul(double a,double b){return a*b;}
+	   public  double div(double a,double b){return a/b;}
+	}
+
+package BusinessLogic;
+import java.net.*;
+import java.util.*;
+import java.io.*;
+class callogic
+{
+	public int evaluate(String expression)
+    {
+        char[] tokens = expression.toCharArray();
+
+         // Stack for numbers: 'values'
+        Stack<Integer> values = new Stack<Integer>();
+
+        // Stack for Operators: 'ops'
+        Stack<Character> ops = new Stack<Character>();
+
+        for (int i = 0; i < tokens.length; i++)
+        {
+             // Current token is a whitespace, skip it
+            if (tokens[i] == ' ')
+                continue;
+
+            // Current token is a number, push it to stack for numbers
+            if (tokens[i] >= '0' && tokens[i] <= '9')
+            {
+                StringBuffer sbuf = new StringBuffer();
+                // There may be more than one digits in number
+                while (i < tokens.length && tokens[i] >= '0' && tokens[i] <= '9')
+                    sbuf.append(tokens[i++]);
+                values.push(Integer.parseInt(sbuf.toString()));
+            }
+
+            // Current token is an opening brace, push it to 'ops'
+            else if (tokens[i] == '(')
+                ops.push(tokens[i]);
+
+            // Closing brace encountered, solve entire brace
+            else if (tokens[i] == ')')
+            {
+                while (ops.peek() != '(')
+                  values.push(Operation(ops.pop(), values.pop(), values.pop()));
+                ops.pop();
+            }
+
+            // Current token is an operator.
+            else if (tokens[i] == '+' || tokens[i] == '-' ||
+                     tokens[i] == '*' || tokens[i] == '/')
+            {
+                // While top of 'ops' has same or greater precedence to current
+                // token, which is an operator. Apply operator on top of 'ops'
+                // to top two elements in values stack
+                while (!ops.empty() && hasPrecedence(tokens[i], ops.peek()))
+                  values.push(Operation(ops.pop(), values.pop(), values.pop()));
+
+                // Push current token to 'ops'.
+                ops.push(tokens[i]);
+            }
+        }
+
+        // Entire expression has been parsed at this point, apply remaining
+        // ops to remaining values
+        while (!ops.empty())
+            values.push(Operation(ops.pop(), values.pop(), values.pop()));
+
+        // Top of 'values' contains result, return it
+        return values.pop();
+    }
+
+    // Returns true if 'op2' has higher or same precedence as 'op1',
+    // otherwise returns false.
+    public boolean hasPrecedence(char op1, char op2)
+    {
+        if (op2 == '(' || op2 == ')')
+            return false;
+        if ((op1 == '*' || op1 == '/') && (op2 == '+' || op2 == '-'))
+            return false;
+        else
+            return true;
+    }
+
+    // A utility method to apply an operator 'op' on operands 'a'
+    // and 'b'. Return the result.
+    public int Operation(char op, int b, int a)
+    {
+        switch (op)
+        {
+        case '+':
+            return add(b,a);
+        case '-':
+            return sub(a,b);
+        case '*':
+            return mul(a,b);
+        case '/':
+            return div(a,b);
+        }
+        return 0;
+    }
+
+
+
+
+}
+public class ClientServerThread  extends Thread{
+	int clientnumber=0;
+	Socket client;
+	ArrayList<String> express=new ArrayList<String>();
+	ArrayList<String> res=new ArrayList<String>();
+	ClientServerThread(int a,Socket b)
+	{
+		client=b;
+		clientnumber=a;
+	}
+	public void run()
+	{
+		try
+		{
+			DataInputStream dis=new DataInputStream(client.getInputStream());
+			DataOutputStream dos=new DataOutputStream(client.getOutputStream());
+			String expression="";
+			while(true)
+			{
+			    expression=dis.readUTF();
+			    if(expression.equals("bye"))
+			    {
+			    	System.out.println("Client: "+clientnumber+" is exiting!!");
+			    	dos.writeUTF("Client: "+String.valueOf(clientnumber)+" is exiting!!");
+			    	dos.writeUTF("Server sending all the result calculated to client: "+clientnumber);
+			    	dos.flush();
+			    	for(int i=0;i<express.size();i++)
+			    	{
+			    		dos.writeUTF(express.get(i)+"="+res.get(i));
+			    	}
+			    	dos.writeUTF("done");
+			    	dos.flush();
+			    	dis.close();
+			    	dos.close();
+			    	client.close();
+			    }
+			    else
+			    {
+			    	System.out.println("Client: "+String.valueOf(clientnumber)+" sent string: "+expression);
+			    	Calculate cal=new Calculate();
+			    	int result=cal.evaluate(expression);
+			    	dos.writeUTF("");
+			    	dos.flush();
+			    	express.add(expression);
+			    	res.add(String.valueOf(result));
+			    	System.out.println("From server to client "+clientnumber+" result is: "+String.valueOf(result));
+			    }
+
+
+			}
+		}
+		catch(Exception e)
+		{
+			System.out.println(e.getStackTrace());
+		}
+	}
+
+}
+
+JUnit Test Cases:
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+import BusinessLogic.callogic;
+
+public class TestCalci {
+	double delta = 0.000000002;
+	@Test
+	public void test1() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("1 + 7");
+		double expected = 8;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test2() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("3 - 2");
+		double expected = 1;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test3() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("2 * 2");
+		double expected = 4;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test4() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("1 / 2");
+		double expected = 0.5;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test5() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("3 + 3 * 4");
+		double expected = 15;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test6() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("6 + 3 - 4");
+		double expected = 5;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test7() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("2 + 8 / 4");
+		double expected = 4;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test8() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("2 + 3 * 4 / 5");
+		double expected = 4.4;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test9() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("2 + 3 * 4 - 5");
+		double expected = 9;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test10() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("( 3 + 3 ) * 5");
+		double expected = 30;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test11() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("( 5 - 3 ) * 5");
+		double expected = 10;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test12() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("-( 2 * 3 ) / 5");
+		double expected = -1.2;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test13() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("( 2 + 3 ) / ( 2 - 3 )");
+		double expected = -5;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test14() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("( 2 * 3 ) + ( 2 / 5 )");
+		double expected = 6.4;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test15() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("2.5 + 3.2 * 5.5");
+		double expected = 20.1;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test16() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("( 2.8 * 3.6 ) - 4.4");
+		double expected = 5.68;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test17() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("2.2 * 2 / 4.2");
+		double expected = 1.047619;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test18() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("4 / 0 * 5");
+		double expected = 3; 
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test19() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("4+3*5");
+		double expected = 19;
+		assertEquals(actual, expected, delta);
+	}
+	@Test
+	public void test20() {
+		Callogic bl = new Callogic();
+		double actual = bl.solve("2*10/5");
+		double expected = 4;
+		assertEquals(actual, expected, delta);
+	}
+
+}

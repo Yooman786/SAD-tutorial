@@ -1,0 +1,468 @@
+                                                         TUTORIAL NO : 1
+Q) Implement calculator program performing operations as addition, subtraction, multiplication ,division considering input in form of expression.
+Theory :
+a ) Monolithic Architecture :
+In software engineering , a monolithic application describes a single-tiered software application in which the user interface and data access code are combined into a single program from a single platform.
+In software engineering, a monolithic application describes a software application which is designed without modularity. Modularity is desirable, in general, as it supports reuse of parts of the application logic and also facilitates maintenance by allowing repair or replacement of parts of the application without requiring wholesale replacement .
+b) Client Server Architecture :
+Client system handles both Presentation and Application layers and Server system handles Database layer. It is also known as client server application. The communication takes place between the Client and the Server. Client system sends the request to the Server system and the Server system processes the request and sends back the data to the Client System.
+The client/server architectural style describes distributed systems that involve a separate client and server system, and a connecting network. The simplest form of client/server system involves a server application that is accessed directly by multiple clients, referred to as a 2-Tier architectural style. 
+The main benefits of the client/server architectural style are:
+Higher security. All data is stored on the server, which generally offers a greater control of security than client machines.
+Centralized data access. Because data is stored only on the server, access and updates to the data are far easier to administer than in other architectural styles.
+Ease of maintenance. Roles and responsibilities of a computing system are distributed among several servers that are known to each other through a network. This ensures that a client remains unaware and unaffected by a server repair, upgrade, or relocation.
+
+
+
+
+
+
+Class Diagram : 
+
+                   
+
+
+
+
+Fig : class diagram for monolithic  architecture
+
+
+
+
+
+
+
+Fig : class diagram for client server architecture
+
+
+	
+IMPLEMENTATION:
+package UI;
+
+import java.util.Scanner;
+
+public class Mcalcui {
+	public static void main(String[] args)
+	 {
+	     Scanner sc = new Scanner(System.in);
+
+	     while (true)
+	     {
+	         // Enter the equation in the form-
+	         // "operand1 operation operand2"
+	         System.out.print("Enter the expression :");
+
+
+	         String inp = sc.nextLine();
+
+	         if (inp.equals("bye"))
+	             break;
+              Callogic c=new Callogic();
+
+	         System.out.println("Answer=" + c.solve(inp));
+	     }
+	     sc.close();
+	 }
+}package BusinessLogic;
+
+public interface calcinterface {
+
+	public double add(double a,double b);
+    public double sub(double a,double b);
+    public double mul(double a,double b);
+    public double div(double a,double b);
+}
+
+package BusinessLogic;
+
+public class Calcprocess implements cali {
+	   public double add(double a,double b)
+		{
+			return a+b;
+		}
+	    public double sub(double a,double b){return a-b;}
+	    public double mul(double a,double b){return a*b;}
+	   public  double div(double a,double b){return a/b;}
+	}
+
+package BusinessLogic;
+
+import java.util.Stack;
+
+import calcs.Calprocess;
+public class Callogic {
+  public double solve(String input){
+	  char[] tokens = input.toCharArray();
+      // Stack for numbers
+         Stack<Double> values = new Stack<Double>();
+
+         // Stack for Operators
+         Stack<Character> ops = new Stack<Character>();
+
+         for (int i = 0; i < tokens.length; i++)
+         {
+             // Current token is a number, push it to stack for numbers
+             if (tokens[i] >= '0' && tokens[i] <= '9')
+             {
+                 StringBuffer sbuf = new StringBuffer();
+                 // There may be more than one digits in number
+                 while (i < tokens.length && tokens[i] >= '0' && tokens[i] <= '9')
+                     sbuf.append(tokens[i++]);
+                 values.push(Double.parseDouble(sbuf.toString()));
+             }
+
+
+             else if (tokens[i] == '(')
+                 ops.push(tokens[i]);
+
+
+             else if (tokens[i] == ')')
+             {
+                 while (ops.peek() != '(')
+                   values.push(Operation(ops.pop(), values.pop(), values.pop()));
+                 ops.pop();
+             }
+
+
+             else if (tokens[i] == '+' || tokens[i] == '-' ||
+                      tokens[i] == '*' || tokens[i] == '/')
+             {
+                 // While top of 'ops' has same or greater precedence to current
+                 // token, which is an operator. Apply operator on top of 'ops'
+                 // to top two elements in values stack
+                 while (!ops.empty() && hasPrecedence(tokens[i], ops.peek()))
+                   values.push(Operation(ops.pop(), values.pop(), values.pop()));
+
+
+                 ops.push(tokens[i]);
+             }
+         }
+
+         // Entire expression has been parsed at this point, apply remaining ops to remaining values
+         while (!ops.empty())
+             values.push(Operation(ops.pop(), values.pop(), values.pop()));
+
+         // Top of 'values' contains result, return it
+         return values.pop();
+
+  }
+  public static boolean hasPrecedence(char op1, char op2)
+  {
+      if (op2 == '(' || op2 == ')')
+          return false;
+      if ((op1 == '*' || op1 == '/') && (op2 == '+' || op2 == '-'))
+          return false;
+      else
+          return true;
+  }
+  public static Double Operation(char op,  Double b, Double a)
+   {
+	  Calprocess cal=new Calprocess();
+      switch (op)
+      {
+      case '+':
+          return cal.add(a,b);  // calling the bussiness class
+      case '-':
+          return cal.sub(a, b);
+      case '*':
+          return cal.mul(a, b);
+      case '/':
+          if (b == 0)
+              throw new
+              UnsupportedOperationException("Cannot divide by zero");
+          return cal.div(a, b);
+      }
+      return 0.00;
+  }
+
+}
+
+Client-Server:
+package UI;
+//Java program to illustrate Client Side Programming
+//for Simple Calculator using TCP
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.util.Scanner;
+
+public class caluiclient
+{
+ public static void main(String[] args) throws IOException
+ {
+    // InetAddress ip = InetAddress.getLocalHost();
+     int port = 6666;
+     Scanner sc = new Scanner(System.in);
+
+     // Step 1: Open the socket connection.
+     Socket s = new Socket("127.0.0.1", port);
+
+     // Step 2: Communication-get the input and output stream
+     DataInputStream dis = new DataInputStream(s.getInputStream());
+     DataOutputStream dos = new DataOutputStream(s.getOutputStream());
+
+     while (true)
+     {
+         // Enter the equation in the form-
+         // "operand1 operation operand2"
+         System.out.print("Enter the expression :");
+         
+
+         String inp = sc.nextLine();
+
+         if (inp.equals("bye"))
+             break;
+
+         // send the equation to server
+         dos.writeUTF(inp);
+
+         // wait till request is processed and sent back to client
+         String ans = dis.readUTF();
+         System.out.println("Answer=" + ans);
+     }
+     sc.close();
+     s.close();
+ }
+ 
+}
+package BusinessLogic;
+
+public interface calcinterface {
+
+	public double add(double a,double b);
+    public double sub(double a,double b);
+    public double mul(double a,double b);
+    public double div(double a,double b);
+}
+
+package BusinessLogic;
+
+public class Calcprocess implements cali {
+	   public double add(double a,double b)
+		{
+			return a+b;
+		}
+	    public double sub(double a,double b){return a-b;}
+	    public double mul(double a,double b){return a*b;}
+	   public  double div(double a,double b){return a/b;}
+	}
+
+package clientserver;
+
+//Java program to illustrate Server Side Programming
+//for Simple Calculator using TCP
+
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Scanner;
+import java.util.Stack;
+
+public class calBserver
+{
+ public static void main(String args[]) throws IOException
+ {
+
+     // Step 1: Establish the socket connection.
+	 System.out.println("Hello");
+     ServerSocket ss = new ServerSocket(6666);
+     Socket s = ss.accept();
+     Scanner sc=new Scanner(System.in);
+     System.out.println("Hello ");
+     // Step 2: Processing the request.
+     DataInputStream dis = new DataInputStream(s.getInputStream());
+     DataOutputStream dos = new DataOutputStream(s.getOutputStream());
+
+     System.out.println("Ready to take input");
+
+     while (true)
+     {
+         // wait for input
+         String input = dis.readUTF();
+
+
+         if(input.equals("bye"))
+             break;
+
+         char[] tokens = input.toCharArray();
+      // Stack for numbers
+         Stack<Double> values = new Stack<Double>();
+
+         // Stack for Operators
+         Stack<Character> ops = new Stack<Character>();
+
+         for (int i = 0; i < tokens.length; i++)
+         {
+             // Current token is a number, push it to stack for numbers
+             if (tokens[i] >= '0' && tokens[i] <= '9')
+             {
+                 StringBuffer sbuf = new StringBuffer();
+                 // There may be more than one digits in number
+                 while (i < tokens.length && tokens[i] >= '0' && tokens[i] <= '9')
+                     sbuf.append(tokens[i++]);
+                 values.push(Double.parseDouble(sbuf.toString()));
+             }
+
+
+             else if (tokens[i] == '(')
+                 ops.push(tokens[i]);
+
+
+             else if (tokens[i] == ')')
+             {
+                 while (ops.peek() != '(')
+                   values.push(Operation(ops.pop(), values.pop(), values.pop()));
+                 ops.pop();
+             }
+
+
+             else if (tokens[i] == '+' || tokens[i] == '-' ||
+                      tokens[i] == '*' || tokens[i] == '/')
+             {
+                 // While top of 'ops' has same or greater precedence to current
+                 // token, which is an operator. Apply operator on top of 'ops'
+                 // to top two elements in values stack
+                 while (!ops.empty() && hasPrecedence(tokens[i], ops.peek()))
+                   values.push(Operation(ops.pop(), values.pop(), values.pop()));
+
+
+                 ops.push(tokens[i]);
+             }
+         }
+
+         // Entire expression has been parsed at this point, apply remaining ops to remaining values
+         while (!ops.empty())
+             values.push(Operation(ops.pop(), values.pop(), values.pop()));
+
+         // Top of 'values' contains result, return it
+         System.out.println(values.pop());
+         dos.writeUTF(Double.toString(values.pop()));
+         s.close();
+         sc.close();
+         ss.close();
+     }
+ }
+ public static boolean hasPrecedence(char op1, char op2)
+ {
+     if (op2 == '(' || op2 == ')')
+         return false;
+     if ((op1 == '*' || op1 == '/') && (op2 == '+' || op2 == '-'))
+         return false;
+     else
+         return true;
+ }
+ public static Double Operation(char op,  Double b, Double a)
+  {
+	   Calcprocess cal=new Calcprocess();
+     switch (op)
+     {
+     case '+':
+         return cal.add(a,b);  // calling the bussiness class
+     case '-':
+         return cal.sub(a, b);
+     case '*':
+         return cal.mul(a, b);
+     case '/':
+         if (b == 0)
+             throw new
+             UnsupportedOperationException("Cannot divide by zero");
+         return cal.div(a, b);
+     }
+     return 0.00;
+ }
+}
+package BusinessLogic;
+
+import java.util.Stack;
+
+import calcs.Calprocess;
+public class Callogic {
+  public double solve(String input){
+	  char[] tokens = input.toCharArray();
+      // Stack for numbers
+         Stack<Double> values = new Stack<Double>();
+
+         // Stack for Operators
+         Stack<Character> ops = new Stack<Character>();
+
+         for (int i = 0; i < tokens.length; i++)
+         {
+             // Current token is a number, push it to stack for numbers
+             if (tokens[i] >= '0' && tokens[i] <= '9')
+             {
+                 StringBuffer sbuf = new StringBuffer();
+                 // There may be more than one digits in number
+                 while (i < tokens.length && tokens[i] >= '0' && tokens[i] <= '9')
+                     sbuf.append(tokens[i++]);
+                 values.push(Double.parseDouble(sbuf.toString()));
+             }
+
+
+             else if (tokens[i] == '(')
+                 ops.push(tokens[i]);
+
+
+             else if (tokens[i] == ')')
+             {
+                 while (ops.peek() != '(')
+                   values.push(Operation(ops.pop(), values.pop(), values.pop()));
+                 ops.pop();
+             }
+
+
+             else if (tokens[i] == '+' || tokens[i] == '-' ||
+                      tokens[i] == '*' || tokens[i] == '/')
+             {
+                 // While top of 'ops' has same or greater precedence to current
+                 // token, which is an operator. Apply operator on top of 'ops'
+                 // to top two elements in values stack
+                 while (!ops.empty() && hasPrecedence(tokens[i], ops.peek()))
+                   values.push(Operation(ops.pop(), values.pop(), values.pop()));
+
+
+                 ops.push(tokens[i]);
+             }
+         }
+
+         // Entire expression has been parsed at this point, apply remaining ops to remaining values
+         while (!ops.empty())
+             values.push(Operation(ops.pop(), values.pop(), values.pop()));
+
+         // Top of 'values' contains result, return it
+         return values.pop();
+
+  }
+  public static boolean hasPrecedence(char op1, char op2)
+  {
+      if (op2 == '(' || op2 == ')')
+          return false;
+      if ((op1 == '*' || op1 == '/') && (op2 == '+' || op2 == '-'))
+          return false;
+      else
+          return true;
+  }
+  public static Double Operation(char op,  Double b, Double a)
+   {
+	  Calprocess cal=new Calprocess();
+      switch (op)
+      {
+      case '+':
+          return cal.add(a,b);  // calling the bussiness class
+      case '-':
+          return cal.sub(a, b);
+      case '*':
+          return cal.mul(a, b);
+      case '/':
+          if (b == 0)
+              throw new
+              UnsupportedOperationException("Cannot divide by zero");
+          return cal.div(a, b);
+      }
+      return 0.00;
+  }
+
+}
